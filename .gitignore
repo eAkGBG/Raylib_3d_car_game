@@ -1,0 +1,36 @@
+# Compiled object files
+*.o
+*.obj
+*.so
+*.dll
+*.exe
+*.dylib
+
+#files that are not .glb assets
+*.blend
+*.blend1
+*.jpg
+*.png
+
+# Build directories
+build/
+bin/
+CMakeFiles/
+CMakeCache.txt
+game
+
+# IDE / editor files
+*.suo
+*.user
+*.swp
+*.sln
+*.vcxproj*
+*.xcodeproj
+*.idea/
+*.vscode/
+
+# Raylib (if you have a local copy)
+raylib/
+
+#MacOs files
+.DS_Store
