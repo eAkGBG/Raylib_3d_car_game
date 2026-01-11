@@ -26,48 +26,72 @@ void Car::rotate(const float& delta){
     if(angle.y < 0.0f) angle.y += TWO_PI;
 
 }
-void Car::gravity(const RayCollision& c){
-    Vector3 hit_position = c.point; //lets work with the position hit were found.
+void Car::gravity(const RayCollision& cA, const RayCollision& cB, const float& dt){
+    //ok i need to fix this. i have some thougts. or i need to read a book about
+    //game physics. and implement some simple fysics to make the car jump on hills.
+    //atleast now it seems to fall from hills.
+
+    Vector3 hit_position = cA.point; //lets work with the position hit were found.
     //std::cout << "Y hit at: " << std::to_string(hit_position.y) << " Distance from ground: " << std::to_string(c.distance) << std::endl;
-    if(position.y - 0.1f < hit_position.y){
-        position.y = hit_position.y + 0.1f;
+    
+    //try to create some gravity.
+    if(cA.distance < 0.2f && cA.normal.y < 0.98f && speed > 0.0f && cA.distance < cB.distance){
+        gravityVelocityY += 100.0f * speed;
+        std::cout << "let's jump now!" << std::endl;
+    }else{
+        gravityVelocityY = 0.0f;
     }
-    //lets do some crude test gravity.
-    if(position.y -0.1f > hit_position.y){
-        position.y = hit_position.y + 0.1f;
+    gravityVelocityY += (mass * -9.8f);
+    position.y += gravityVelocityY * dt;
+
+    if(position.y < hit_position.y){
+        position.y = hit_position.y + 0.0f;
+        if(cB.distance < cA.distance ){
+            gravityVelocityY = 0.0f;
+        }
+
     }
+    
+    previousY = position.y;   
 }
 
 void Car::updateTransformation(){
-    //rotation = MatrixRotateY(angle.y);
-    //translation = MatrixTranslate(position.x, position.y, position.z);
-    //carModel.transform = MatrixMultiply(rotation, translation);
     //translate first
     Quaternion carRotate = QuaternionFromAxisAngle((Vector3){ 0.0f, 1.0f, 0.0f }, angle.y);
     carModel.transform = MatrixMultiply(QuaternionToMatrix(carRotate),
                                     MatrixTranslate(position.x,
                                                     position.y,
                                                     position.z));
+    
     rayForward.position = position;
     rayBackward.position = position;
     rayLeft.position = position;
     rayRight.position = position;
-    rayDown.position = position;
+    rayDownF.position = position;
+    rayDownB.position = position;
 
-    rayForward.position.y = position.y + 0.3f;
-    rayBackward.position.y = position.y + 0.3f;
-    rayLeft.position.y = position.y + 0.3f;
-    rayRight.position.y = position.y + 0.3f;
-    rayDown.position = position;
+    rayForward.position.y = position.y + 0.1f; //smal hack to handle elevation changes in track. we move the ray upp a small amount.
+    rayBackward.position.y = position.y + 0.1f;
+    rayLeft.position.y = position.y + 0.1f;
+    rayRight.position.y = position.y + 0.1f;
 
     Matrix rotMat = QuaternionToMatrix(carRotate);
     Vector3 forward = {0.0f, 0.0f, 1.0f};
+    Vector3 forwardWorld = Vector3Transform({0.0f, 0.0f, 1.0f}, rotMat);
     Vector3 backward = {0.0f, 0.0f, -1.0f};
     Vector3 left = {1.0f, 0.0f, 0.0f};
     Vector3 right = {-1.0f, 0.0f, 0.0f};
-    //Vector3 down = {0.0f, -1.0f, 0.0f}; // no need to recalculate down ray rotation for now.
+    Vector3 down = {0.0f, -1.0f, 0.0f};
+    Vector3 downWorld = Vector3Transform(down, rotMat);
+    
     rayForward.direction = Vector3Transform(forward, rotMat);
     rayBackward.direction = Vector3Transform(backward, rotMat);
     rayLeft.direction = Vector3Transform(left, rotMat);
     rayRight.direction = Vector3Transform(right, rotMat);
+    rayDownF.direction = downWorld;
+    rayDownB.direction = downWorld;
+    rayDownF.position = Vector3Add(position, Vector3Scale(forwardWorld, 0.5f));
+    rayDownB.position = Vector3Add(position, Vector3Scale(forwardWorld, -0.5f));
+    rayDownF.position.y = position.y + 0.3f;
+    rayDownB.position.y = position.y + 0.3f;
 }

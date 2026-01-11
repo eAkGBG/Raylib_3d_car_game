@@ -16,45 +16,75 @@ const int GRID_ROWS = 10;
 bool game_checkCollision(BoundingBox &player, BoundingBox &enemy){
     return CheckCollisionBoxes(player, enemy);
 }
+float game_calculateNormalAngle(const Vector3 &a, const Vector3 &b){
+    float dot = Vector3DotProduct(a, b);
+    float lenA = Vector3Length(a);
+    float lenB = Vector3Length(b);
+    float cosA = dot / (lenA * lenB);
+    //clamp this to avoid NaN from rounding errors
+    cosA = fmaxf(-1.0f, fminf(1.0f, cosA));
+
+    //return cosA *(180/PI);
+    return acosf(cosA) * RAD2DEG;
+}
 bool game_trackCollisions(Car &car, Model &track, float &dt, std::string &hitObjectName){
     RayCollision cF = GetRayCollisionMesh(car.rayForward, track.meshes[0], track.transform);
     RayCollision cB = GetRayCollisionMesh(car.rayBackward, track.meshes[0], track.transform);
     RayCollision cL = GetRayCollisionMesh(car.rayLeft, track.meshes[0], track.transform);
     RayCollision cR = GetRayCollisionMesh(car.rayRight, track.meshes[0], track.transform);
-    RayCollision cG = GetRayCollisionMesh(car.rayDown, track.meshes[0], track.transform); //ground
-    
-    if(cG.hit){
-        car.gravity(cG);
-    }
-    
-    if(cF.hit && cF.distance < 1.0f){
-        if(cF.distance < 0.8f){
-            car.speed *= 0.2f;
-            car.translate(-0.3f * dt, dt);
+    RayCollision cGf = GetRayCollisionMesh(car.rayDownF, track.meshes[0], track.transform); //ground
+    RayCollision cGb = GetRayCollisionMesh(car.rayDownB, track.meshes[0], track.transform); //ground
+    Vector3 gameUP = {0.0f,1.0f,0.0f};
+
+    if(cGf.hit && cGb.hit){
+        //float distanceF =  car.position.y - cGf.point.y;
+        //float distanceB =  car.position.y - cGb.point.y;
+        if (cGf.distance < cGb.distance){
+            //std::cout << "distanceF is smaler then distanceB" << std::endl;
+            car.gravity(cGf, cGb, dt);
+        }else if (cGf.distance > cGb.distance){
+            //std::cout << "distanceB is smaler then distanceF" << std::endl;
+            car.gravity(cGb, cGf, dt);
         }else {
-            car.speed *= 0.2f;
-            car.translate(-0.2f * dt, dt);
+            std::cout << "else we did not hawe distance larger hten the other" << std::endl;
+            car.gravity(cGf, cGb, dt);
         }
-        hitObjectName = (std::string) "Ray forward";
-        return true;
+    }else {
+        std::cout << "PROBLEM!! both rays not hitting" << std::endl;
     }
-    if(cB.hit && cB.distance < 0.6f){
-        if(cB.distance < 0.3f){
-            car.speed *= 0.2f;
-            car.translate(0.3f * dt, dt);
-        }else {
-            car.speed *= 0.2f;
-            car.translate(0.2f * dt, dt);
+    
+    if(cF.hit && cF.distance < 0.9f){
+        if(game_calculateNormalAngle(cF.normal, gameUP) > 45.0f){
+            if(cF.distance < 0.7f){
+                car.speed *= 0.1f;
+                car.translate(-0.4f * dt, dt);
+            }else {
+                car.speed *= 0.7f;
+                car.translate(-0.2f * dt, dt);
+            }
+            hitObjectName = (std::string) "Ray forward";
+            return true;
         }
-        hitObjectName = (std::string) "Ray backward";
-        return true;
     }
-    if(cL.hit && cL.distance < 0.5f){
+    if(cB.hit && cB.distance < 0.9f){
+        if(game_calculateNormalAngle(cB.normal, gameUP) > 45.0f){
+            if(cB.distance < 0.3f){
+                car.speed *= 0.1f;
+                car.translate(0.4f * dt, dt);
+            }else {
+                car.speed *= 0.7f;
+                car.translate(0.2f * dt, dt);
+            }
+            hitObjectName = (std::string) "Ray backward";
+            return true;
+        }
+    }
+    if(cL.hit && cL.distance < 0.6f){
         car.speed *= 0.5f;
         hitObjectName = (std::string) "Ray left";
         return true;
     }
-    if(cR.hit && cR.distance < 0.5f){
+    if(cR.hit && cR.distance < 0.6f){
         car.speed *= 0.8f;
         hitObjectName = (std::string) "Ray right";
         return true;
@@ -124,6 +154,9 @@ int main(void)
     {
         float dt = GetFrameTime(); //Keep track of time for deltaTime functionality.
         
+        //update cars transformation
+        myCar.updateTransformation();
+
         if(IsKeyDown(KEY_W)){
             myCar.translate(0.5f * dt, dt);
         }
@@ -141,15 +174,9 @@ int main(void)
             myCar.translate(0.0f,dt);
         }
 
-        
-        
         // let's look for collisions.
         std::string hitObjectName = "None"; // this one used to siplay collision information.
         game_trackCollisions(myCar, road, dt, hitObjectName);
-        
-        //after collisions we update cars transformation
-        myCar.updateTransformation();
-
 
         //FX TEXT Parsing
         fxTimer += dt;
@@ -183,6 +210,8 @@ int main(void)
                 DrawRay(myCar.rayLeft, BLUE);
                 DrawRay(myCar.rayRight, ORANGE);
                 DrawRay(myCar.rayBackward, RED);
+                DrawRay(myCar.rayDownF, PURPLE);
+                DrawRay(myCar.rayDownB, PURPLE);
                 DrawModel(myCar.carModel,(Vector3){0.0f,0.0f,0.0f},1.0f, RED);
 
 
