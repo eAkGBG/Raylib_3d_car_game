@@ -5,17 +5,12 @@
 #include <string>
 #include <iostream>
 #include <vector>
+#include "physics.hpp"
 #include "track.hpp"
 #include "car.hpp"
 
 const int SCREEN_SIZE = 720;
-//Calculate play feild grid.
-const int GRID_COLS = 10;
-const int GRID_ROWS = 10;
 
-bool game_checkCollision(BoundingBox &player, BoundingBox &enemy){
-    return CheckCollisionBoxes(player, enemy);
-}
 float game_calculateNormalAngle(const Vector3 &a, const Vector3 &b){
     float dot = Vector3DotProduct(a, b);
     float lenA = Vector3Length(a);
@@ -32,26 +27,8 @@ bool game_trackCollisions(Car &car, Model &track, float &dt, std::string &hitObj
     RayCollision cB = GetRayCollisionMesh(car.rayBackward, track.meshes[0], track.transform);
     RayCollision cL = GetRayCollisionMesh(car.rayLeft, track.meshes[0], track.transform);
     RayCollision cR = GetRayCollisionMesh(car.rayRight, track.meshes[0], track.transform);
-    RayCollision cGf = GetRayCollisionMesh(car.rayDownF, track.meshes[0], track.transform); //ground
-    RayCollision cGb = GetRayCollisionMesh(car.rayDownB, track.meshes[0], track.transform); //ground
-    Vector3 gameUP = {0.0f,1.0f,0.0f};
 
-    if(cGf.hit && cGb.hit){
-        //float distanceF =  car.position.y - cGf.point.y;
-        //float distanceB =  car.position.y - cGb.point.y;
-        if (cGf.distance < cGb.distance){
-            //std::cout << "distanceF is smaler then distanceB" << std::endl;
-            car.gravity(cGf, cGb, dt);
-        }else if (cGf.distance > cGb.distance){
-            //std::cout << "distanceB is smaler then distanceF" << std::endl;
-            car.gravity(cGb, cGf, dt);
-        }else {
-            std::cout << "else we did not hawe distance larger hten the other" << std::endl;
-            car.gravity(cGf, cGb, dt);
-        }
-    }else {
-        std::cout << "PROBLEM!! both rays not hitting" << std::endl;
-    }
+    Vector3 gameUP = {0.0f,1.0f,0.0f};
     
     if(cF.hit && cF.distance < 0.9f){
         if(game_calculateNormalAngle(cF.normal, gameUP) > 45.0f){
@@ -100,16 +77,20 @@ int main(void)
     InitWindow(screenWidth, screenHeight, "Raylib basic window"); //Important to call init window before doing calculations on font and probably other stuff!
     SetTargetFPS(60);
  
+    PhysicsWorld world;
     //use my new shiny car class
-    Car myCar;
+    Car myCar({0.5f, 0.4f, 1.0f}, {0.0f, 3.5f, 0.0f}, &world);
+    //myCar.setWorld(&world);
 
     //load game world
     Model road = LoadModel("./models/road.glb");
     Model sky = LoadModel("./models/sky.glb");
     Model ground = LoadModel("./models/ground.glb");
 
+    world.AddStaticObject(&road);
+
     // Init camera view in 3d scene.
-    Camera3D camera = { 0 }; 
+    Camera3D camera = {}; 
     camera.position = (Vector3){0.0f, 20.0f, 30.0f };  //Camera position
     camera.target = (Vector3){0.0f, 0.0f, 0.0f};        //Camera looking at point
     camera.up = (Vector3){0.0f, 1.0f, 0.0f};            //Camera up vector (rotation need to figure this out but this should be pointing at target)
@@ -177,6 +158,7 @@ int main(void)
         // let's look for collisions.
         std::string hitObjectName = "None"; // this one used to siplay collision information.
         game_trackCollisions(myCar, road, dt, hitObjectName);
+        world.Step(dt);
 
         //FX TEXT Parsing
         fxTimer += dt;
@@ -194,8 +176,8 @@ int main(void)
             }
             fxTimer = 0.0f;
         }
-        camera.position = Vector3Add(myCar.position, {0.0f, 15.0f, -20.0f});
-        camera.target = myCar.position;
+        camera.position = Vector3Add(myCar.physicsObject.position, {0.0f, 15.0f, -20.0f});
+        camera.target = myCar.physicsObject.position;
         
         //UpdateCamera(&camera, CAMERA_ORBITAL);
         //Draw scene
@@ -219,7 +201,10 @@ int main(void)
             EndMode3D();
             //FxText rendering.
             for(int i = 0; i < arrayLength - 1; i++){
-            DrawText(fxArray[i].letter, fxArray[i].x, fxArray[i].y, 20, DARKPURPLE);
+                DrawText(fxArray[i].letter, fxArray[i].x, fxArray[i].y, 20, DARKPURPLE);
+                //lets do some debug for position of car.
+                std::string debugText = "Y:" + std::to_string(myCar.physicsObject.position.y) + " X:" + std::to_string(myCar.physicsObject.position.x) + " Z:" + std::to_string(myCar.physicsObject.position.z);
+                DrawText(debugText.c_str(), 10,60,20,DARKGREEN);
             }
             DrawText(hitObjectName.c_str(), 10,40,20,DARKGREEN);
             DrawFPS(10,10); //allways nice to se fps.
