@@ -21,12 +21,13 @@ class Car{
         Ray rayDownF;
         Ray rayDownB;
         Object physicsObject;
+        //OBB carOBB;
         
         Car (Vector3 setSize = {0.5f, 0.4f, 1.0f}, Vector3 setPosition = {0.0f, 0.5f, 0.0f}, PhysicsWorld* world = nullptr)
             : position (setPosition), size(setSize),
             angle({0.0f,0.0f,0.0f}),
             speed(0.0f),
-            mass(0.1f),
+            mass(1200.0f),
             rayForward(setPosition, {0.0f, 0.25f, 0.0f}), //a little hack point the rays slightly upp to compensate for elevation changes in the track.
             rayBackward(setPosition, {-1.0f, 0.25f, 0.0f}),
             rayLeft(setPosition, {0.0f, 0.25f, 1.0f}),
@@ -41,6 +42,7 @@ class Car{
             physicsObject.position = position;
             physicsObject.force = {0.0f, 0.0f, 0.0f};
             physicsObject.velocity = {0.0f, 0.0f, 0.0f};
+            //carOBB = BuildOBB();
             if(physWorld){
                 physWorld->AddDynObject(&physicsObject);
             }else{

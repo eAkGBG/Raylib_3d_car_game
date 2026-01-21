@@ -26,8 +26,12 @@ void Car::translate(const float& power, const float& dt){
 void Car::rotate(const float& delta){
 
     angle.y += delta;
-    if(angle.y >= TWO_PI) angle.y -= TWO_PI;
-    if(angle.y < 0.0f) angle.y += TWO_PI;
+    if(angle.y >= TWO_PI){
+        angle.y -= TWO_PI;
+    }
+    else{
+        if(angle.y < 0.0f) angle.y += TWO_PI;
+    }
 
 }
 
@@ -35,7 +39,9 @@ void Car::updateTransformation(){
     //translate first
     //position.y = physicsObject->position.y;
     Quaternion carRotate = QuaternionFromAxisAngle((Vector3){ 0.0f, 1.0f, 0.0f }, angle.y);
-    carModel.transform = MatrixMultiply(QuaternionToMatrix(carRotate),
+    //lets add a temp fix for the physics to know about the car's rotation.
+    physicsObject.rotation = carRotate;
+    carModel.transform = MatrixMultiply(QuaternionToMatrix(physicsObject.rotation),
                                     MatrixTranslate(physicsObject.position.x,
                                                     physicsObject.position.y,
                                                     physicsObject.position.z));

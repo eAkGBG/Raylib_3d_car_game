@@ -34,6 +34,7 @@ bool game_trackCollisions(Car &car, Model &track, float &dt, std::string &hitObj
         if(game_calculateNormalAngle(cF.normal, gameUP) > 45.0f){
             if(cF.distance < 0.7f){
                 car.speed *= 0.1f;
+                car.physicsObject.velocity *= 0.1f;
                 car.translate(-0.4f * dt, dt);
             }else {
                 car.speed *= 0.7f;
@@ -47,6 +48,7 @@ bool game_trackCollisions(Car &car, Model &track, float &dt, std::string &hitObj
         if(game_calculateNormalAngle(cB.normal, gameUP) > 45.0f){
             if(cB.distance < 0.3f){
                 car.speed *= 0.1f;
+                car.physicsObject.velocity *= 0.1f;
                 car.translate(0.4f * dt, dt);
             }else {
                 car.speed *= 0.7f;
@@ -58,11 +60,13 @@ bool game_trackCollisions(Car &car, Model &track, float &dt, std::string &hitObj
     }
     if(cL.hit && cL.distance < 0.6f){
         car.speed *= 0.5f;
+        car.physicsObject.velocity *= 0.5f;
         hitObjectName = (std::string) "Ray left";
         return true;
     }
     if(cR.hit && cR.distance < 0.6f){
-        car.speed *= 0.8f;
+        car.speed *= 0.5f;
+        car.physicsObject.velocity *= 0.5f;
         hitObjectName = (std::string) "Ray right";
         return true;
     }
@@ -139,16 +143,20 @@ int main(void)
         myCar.updateTransformation();
 
         if(IsKeyDown(KEY_W)){
-            myCar.translate(0.5f * dt, dt);
+            world.Accelerate(&myCar.physicsObject, {0.0f, 0.0f, 1.0f}, (600.0f * 3.0f * 3.0f) / 0.35f); //some math to simulate engine power to wheels F = (Nm * Gear ratio * Final Gear) / wheel diameter
+            //myCar.translate(0.5f * dt, dt);
         }
         if(IsKeyDown(KEY_S)){
             myCar.translate(-0.5f * dt, dt);
+            world.Accelerate(&myCar.physicsObject, {0.0f, 0.0f, 1.0f}, (-200.0f * 4.0f * 3.0f) / 0.35f);
         }
         if(IsKeyDown(KEY_A)){
             myCar.rotate(3.0f*dt);
+            world.Rotate(&myCar.physicsObject, myCar.angle);
         }
         if(IsKeyDown(KEY_D)){
             myCar.rotate(-3.0f*dt);
+            world.Rotate(&myCar.physicsObject, myCar.angle);
         }
 
         if(!IsKeyDown(KEY_W) && !IsKeyDown(KEY_S)){
@@ -204,6 +212,7 @@ int main(void)
                 DrawText(fxArray[i].letter, fxArray[i].x, fxArray[i].y, 20, DARKPURPLE);
                 //lets do some debug for position of car.
                 std::string debugText = "Y:" + std::to_string(myCar.physicsObject.position.y) + " X:" + std::to_string(myCar.physicsObject.position.x) + " Z:" + std::to_string(myCar.physicsObject.position.z);
+                debugText = "Speed: " + std::to_string(Vector3Length(myCar.physicsObject.velocity)* 3.6f) + "KMH";
                 DrawText(debugText.c_str(), 10,60,20,DARKGREEN);
             }
             DrawText(hitObjectName.c_str(), 10,40,20,DARKGREEN);

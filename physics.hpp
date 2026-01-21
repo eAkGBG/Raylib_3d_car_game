@@ -39,7 +39,7 @@ class PhysicsWorld {
             for (Object* obj : dynObjects){
                 Ray down;
                 down.position = obj->position;
-                down.position.y += 2; //for now quick hack to detect floor.
+                down.position.y += 0.2; //for now quick hack to detect floor.
                 down.direction = {0.0f,-1.0f,0.0f};
                 
                 //lets do some safty teleport up if we go under.
@@ -54,7 +54,7 @@ class PhysicsWorld {
                     RayCollision cD = GetRayCollisionMesh(down, staticMesh->meshes[0], staticMesh->transform);
                     RayCollision cU = GetRayCollisionMesh(upp, staticMesh->meshes[0], staticMesh->transform);
                     if(cD.hit && cD.point.y > obj->position.y){
-                        obj->position.y = cD.point.y;
+                        obj->position.y = cD.point.y + 0.01f; //Add som height to be safe.
                         if(obj->velocity.y < 0) obj->velocity.y = 0; // we take out the downwards velocity from G when on the road.
                         groundFound = true;
                     }
@@ -84,7 +84,16 @@ class PhysicsWorld {
             staticObjects.erase(std::remove(staticObjects.begin(), staticObjects.end(), object),
                                 staticObjects.end());
         }
-
+        void Accelerate(Object* object, Vector3 direction, float force){
+            Vector3 worldDirection = Vector3RotateByQuaternion(direction, object->rotation);
+            object->force = Vector3Add(object->force, Vector3Scale(worldDirection, force));
+        }
+        void Rotate(Object* object, Vector3 direction){
+            //Hacks to make it turn we can't simply rotate the velocity vector. TODO: make the function that is universal and work on the force so we can slide.
+            float tempVelocity = Vector3Length(object->velocity);
+            Vector3 localForward = Vector3RotateByQuaternion({0,0,1}, object->rotation); // use the local Z directon and object rotation quaternion. i 
+            object->velocity = Vector3Scale(localForward, tempVelocity);
+        }
         /* ----------  One frame of physics  ---------- */
         void Step(float dt){
             for (Object* obj : dynObjects){
