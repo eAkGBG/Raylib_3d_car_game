@@ -147,7 +147,7 @@ int main(void)
             //myCar.translate(0.5f * dt, dt);
         }
         if(IsKeyDown(KEY_S)){
-            myCar.translate(-0.5f * dt, dt);
+            //myCar.translate(-0.5f * dt, dt);
             world.Accelerate(&myCar.physicsObject, {0.0f, 0.0f, 1.0f}, (-200.0f * 4.0f * 3.0f) / 0.35f);
         }
         if(IsKeyDown(KEY_A)){
@@ -160,7 +160,8 @@ int main(void)
         }
 
         if(!IsKeyDown(KEY_W) && !IsKeyDown(KEY_S)){
-            myCar.translate(0.0f,dt);
+            //myCar.translate(0.0f,dt);
+            myCar.physicsObject.velocity *= 0.9f;
         }
 
         // let's look for collisions.
