@@ -22,57 +22,6 @@ float game_calculateNormalAngle(const Vector3 &a, const Vector3 &b){
     //return cosA *(180/PI);
     return acosf(cosA) * RAD2DEG;
 }
-bool game_trackCollisions(Car &car, Model &track, float &dt, std::string &hitObjectName){
-    RayCollision cF = GetRayCollisionMesh(car.rayForward, track.meshes[0], track.transform);
-    RayCollision cB = GetRayCollisionMesh(car.rayBackward, track.meshes[0], track.transform);
-    RayCollision cL = GetRayCollisionMesh(car.rayLeft, track.meshes[0], track.transform);
-    RayCollision cR = GetRayCollisionMesh(car.rayRight, track.meshes[0], track.transform);
-
-    Vector3 gameUP = {0.0f,1.0f,0.0f};
-    
-    if(cF.hit && cF.distance < 0.9f){
-        if(game_calculateNormalAngle(cF.normal, gameUP) > 45.0f){
-            if(cF.distance < 0.7f){
-                car.speed *= 0.1f;
-                car.physicsObject.velocity *= 0.1f;
-                car.translate(-0.4f * dt, dt);
-            }else {
-                car.speed *= 0.7f;
-                car.translate(-0.2f * dt, dt);
-            }
-            hitObjectName = (std::string) "Ray forward";
-            return true;
-        }
-    }
-    if(cB.hit && cB.distance < 0.9f){
-        if(game_calculateNormalAngle(cB.normal, gameUP) > 45.0f){
-            if(cB.distance < 0.3f){
-                car.speed *= 0.1f;
-                car.physicsObject.velocity *= 0.1f;
-                car.translate(0.4f * dt, dt);
-            }else {
-                car.speed *= 0.7f;
-                car.translate(0.2f * dt, dt);
-            }
-            hitObjectName = (std::string) "Ray backward";
-            return true;
-        }
-    }
-    if(cL.hit && cL.distance < 0.6f){
-        car.speed *= 0.5f;
-        car.physicsObject.velocity *= 0.5f;
-        hitObjectName = (std::string) "Ray left";
-        return true;
-    }
-    if(cR.hit && cR.distance < 0.6f){
-        car.speed *= 0.5f;
-        car.physicsObject.velocity *= 0.5f;
-        hitObjectName = (std::string) "Ray right";
-        return true;
-    }
-
-    return false;
-}
 
 int main(void)
 {
@@ -85,6 +34,9 @@ int main(void)
     //use my new shiny car class
     Car myCar({0.5f, 0.4f, 1.0f}, {0.0f, 3.5f, 0.0f}, &world);
     //myCar.setWorld(&world);
+    //a debug OBB cube.
+    Model testOBB = LoadModelFromMesh(GenMeshCube(myCar.physicsObject.worldOBB.halfSize.x*2, myCar.physicsObject.worldOBB.halfSize.y*2, myCar.physicsObject.worldOBB.halfSize.z*2));
+    testOBB.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = Fade(BLUE, 0.5f); //make it blue and transparent.
 
     //load game world
     Model road = LoadModel("./models/road.glb");
@@ -144,11 +96,9 @@ int main(void)
 
         if(IsKeyDown(KEY_W)){
             world.Accelerate(&myCar.physicsObject, {0.0f, 0.0f, 1.0f}, (600.0f * 3.0f * 3.0f) / 0.35f); //some math to simulate engine power to wheels F = (Nm * Gear ratio * Final Gear) / wheel diameter
-            //myCar.translate(0.5f * dt, dt);
         }
         if(IsKeyDown(KEY_S)){
-            //myCar.translate(-0.5f * dt, dt);
-            world.Accelerate(&myCar.physicsObject, {0.0f, 0.0f, 1.0f}, (-200.0f * 4.0f * 3.0f) / 0.35f);
+            world.Accelerate(&myCar.physicsObject, {0.0f, 0.0f, -1.0f}, (200.0f * 4.0f * 3.0f) / 0.35f);
         }
         if(IsKeyDown(KEY_A)){
             myCar.rotate(3.0f*dt);
@@ -160,13 +110,12 @@ int main(void)
         }
 
         if(!IsKeyDown(KEY_W) && !IsKeyDown(KEY_S)){
-            //myCar.translate(0.0f,dt);
             myCar.physicsObject.velocity *= 0.9f;
         }
 
         // let's look for collisions.
         std::string hitObjectName = "None"; // this one used to siplay collision information.
-        game_trackCollisions(myCar, road, dt, hitObjectName);
+        //game_trackCollisions(myCar, road, dt, hitObjectName);
         world.Step(dt);
 
         //FX TEXT Parsing
@@ -190,6 +139,7 @@ int main(void)
         
         //UpdateCamera(&camera, CAMERA_ORBITAL);
         //Draw scene
+
         BeginDrawing();
             ClearBackground(RAYWHITE);
             BeginMode3D(camera);
@@ -204,6 +154,13 @@ int main(void)
                 DrawRay(myCar.rayDownF, PURPLE);
                 DrawRay(myCar.rayDownB, PURPLE);
                 DrawModel(myCar.carModel,(Vector3){0.0f,0.0f,0.0f},1.0f, RED);
+
+                //rotate the testOBB
+                /* testOBB.transform = MatrixMultiply(QuaternionToMatrix(myCar.physicsObject.worldOBB.rotation),
+                                    MatrixTranslate(myCar.physicsObject.worldOBB.center.x,
+                                                    myCar.physicsObject.worldOBB.center.y,
+                                                    myCar.physicsObject.worldOBB.center.z));
+                DrawModel(testOBB,(Vector3){0.0f,0.0f,0.0f},1.0f,WHITE); */
 
 
                 //DrawGrid(100, 1.0f); //first part is amount of grid squares. second part is the unit size exampel 1.0f is 1x1 cell size. 
@@ -225,6 +182,9 @@ int main(void)
     //UnloadModelAnimations(modelAnimations, animationsCount);
     UnloadModel(myCar.carModel);
     UnloadModel(road);
+    UnloadModel(ground);
+    UnloadModel(sky);
+    UnloadModel(testOBB);
     free(fxArray);
     //free(lineArray);
     //UnloadTexture(gubbenTex);

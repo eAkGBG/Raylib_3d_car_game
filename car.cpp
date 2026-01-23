@@ -8,21 +8,6 @@ float Car::minSpeed = -0.2f;
 void Car::setWorld(PhysicsWorld* world){
     physWorld = world;
 }
-
-void Car::translate(const float& power, const float& dt){
-    speed += power; //Accell/decel power applied to speed.
-    if(power == 0.0f){  //Ad some friction to make it stop.
-        if(speed > 0.01f) speed -= 0.15 * dt;
-        else if(speed < -0.01f) speed += 0.15 * dt;
-        else speed = 0.0f;
-    }
-    if(speed > maxSpeed) speed = maxSpeed;
-    if(speed < minSpeed) speed = minSpeed;
-    
-    physicsObject.position.x += sinf(angle.y) * speed;
-    physicsObject.position.z += cosf(angle.y) * speed;
-
-}
 void Car::rotate(const float& delta){
 
     angle.y += delta;
@@ -45,6 +30,7 @@ void Car::updateTransformation(){
                                     MatrixTranslate(physicsObject.position.x,
                                                     physicsObject.position.y,
                                                     physicsObject.position.z));
+    physicsObject.UpdateWorldOBB();
     
     rayForward.position = physicsObject.position;
     rayBackward.position = physicsObject.position;

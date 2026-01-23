@@ -12,7 +12,6 @@ class Car{
         Vector3 position;
         Vector3 size;
         Vector3 angle;
-        float speed;
         float mass;
         Ray rayForward;
         Ray rayBackward;
@@ -26,7 +25,6 @@ class Car{
         Car (Vector3 setSize = {0.5f, 0.4f, 1.0f}, Vector3 setPosition = {0.0f, 0.5f, 0.0f}, PhysicsWorld* world = nullptr)
             : position (setPosition), size(setSize),
             angle({0.0f,0.0f,0.0f}),
-            speed(0.0f),
             mass(1200.0f),
             rayForward(setPosition, {0.0f, 0.25f, 0.0f}), //a little hack point the rays slightly upp to compensate for elevation changes in the track.
             rayBackward(setPosition, {-1.0f, 0.25f, 0.0f}),
@@ -38,10 +36,11 @@ class Car{
         {
             //Mesh cubeMesh = GenMeshCube(size.x,size.y,size.z);
             carModel = LoadModel("./models/car.glb");
-            physicsObject.mass = 1200.0f;
+            physicsObject.mass = mass;
             physicsObject.position = position;
             physicsObject.force = {0.0f, 0.0f, 0.0f};
             physicsObject.velocity = {0.0f, 0.0f, 0.0f};
+            physicsObject.BuildObbFromModel(&carModel);
             //carOBB = BuildOBB();
             if(physWorld){
                 physWorld->AddDynObject(&physicsObject);
@@ -49,12 +48,8 @@ class Car{
                 std::cout << "No Physics World!!" << std::endl;
             }
         }
-
-        void translate(const float& power, const float& dt);
         void rotate(const float& delta);
-        void updateRays();
         void updateTransformation();
-        void gravity(const RayCollision& cA, const RayCollision& cB, const float& dt);
         void setWorld(PhysicsWorld* world);
     private:
         static constexpr float TWO_PI = 2.0f * PI;
