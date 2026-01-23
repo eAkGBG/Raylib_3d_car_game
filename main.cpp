@@ -93,7 +93,8 @@ int main(void)
         
         //update cars transformation
         myCar.updateTransformation();
-
+        //ToDo: Fix the acceleration. wee need to keep track if
+        //it is touching the ground or not!
         if(IsKeyDown(KEY_W)){
             world.Accelerate(&myCar.physicsObject, {0.0f, 0.0f, 1.0f}, (600.0f * 3.0f * 3.0f) / 0.35f); //some math to simulate engine power to wheels F = (Nm * Gear ratio * Final Gear) / wheel diameter
         }
