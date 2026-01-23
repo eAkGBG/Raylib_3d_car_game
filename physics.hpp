@@ -201,7 +201,8 @@ class PhysicsWorld {
             Vector3 localForward = Vector3RotateByQuaternion({0,0,1}, object->rotation); // use the local Z directon and object rotation quaternion. i 
             object->velocity = Vector3Scale(localForward, tempVelocity);
         }
-        void Gravity(Object* object, float dt){
+        //void Gravity(Object* object, float dt)
+        void Gravity(Object* object){
             //force = force + (gravity × mass)
             object->force = Vector3Add(object->force,
                                     Vector3Scale(w_gravity, object->mass));
@@ -210,8 +211,8 @@ class PhysicsWorld {
         void Step(float dt){
             for (Object* obj : dynObjects){
                 //Apply Gravity.
-                Gravity(obj, dt);
-
+                //Gravity(obj, dt);
+                Gravity(obj);
                 //Acumulator Velocity. Here we build the velocity vector.
                 //a = F / m
                 //Acceleration = Force ÷ Mass
@@ -223,13 +224,12 @@ class PhysicsWorld {
                 obj->position = Vector3Add(obj->position,
                                             Vector3Scale(obj->velocity, dt));
                 //Acumulator Rotation. Here we build the rotatinal force TODO: write some code here.
-
+                
+                                //Run our collision handler.
+                ObbCollisions();
+                
                 //Clear forces before next frame.
                 obj->force = {0.0f, 0.0f, 0.0f};
-                //Run our collision handler.
-                //ScanCollisions();
-                //when we update this probably we need to put it before we Null forces.
-                ObbCollisions();
             }
         }
 };

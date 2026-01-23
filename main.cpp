@@ -11,17 +11,6 @@
 
 const int SCREEN_SIZE = 720;
 
-float game_calculateNormalAngle(const Vector3 &a, const Vector3 &b){
-    float dot = Vector3DotProduct(a, b);
-    float lenA = Vector3Length(a);
-    float lenB = Vector3Length(b);
-    float cosA = dot / (lenA * lenB);
-    //clamp this to avoid NaN from rounding errors
-    cosA = fmaxf(-1.0f, fminf(1.0f, cosA));
-
-    //return cosA *(180/PI);
-    return acosf(cosA) * RAD2DEG;
-}
 
 int main(void)
 {
@@ -111,7 +100,8 @@ int main(void)
         }
 
         if(!IsKeyDown(KEY_W) && !IsKeyDown(KEY_S)){
-            myCar.physicsObject.velocity *= 0.9f;
+            myCar.physicsObject.velocity.x *= 0.9f;
+            myCar.physicsObject.velocity.z *= 0.9f;
         }
 
         // let's look for collisions.
