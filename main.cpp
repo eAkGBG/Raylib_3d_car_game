@@ -9,7 +9,7 @@
 #include "track.hpp"
 #include "car.hpp"
 
-const int SCREEN_SIZE = 720;
+const int SCREEN_SIZE = 1080;
 
 
 int main(void)
@@ -100,8 +100,8 @@ int main(void)
         }
 
         if(!IsKeyDown(KEY_W) && !IsKeyDown(KEY_S)){
-            myCar.physicsObject.velocity.x *= 0.9f;
-            myCar.physicsObject.velocity.z *= 0.9f;
+            myCar.physicsObject.velocity.x *= 0.97f;
+            myCar.physicsObject.velocity.z *= 0.97f;
         }
 
         // let's look for collisions.

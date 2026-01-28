@@ -45,6 +45,7 @@ struct Object{
             Vector3 max = {-1000000.0f, -1000000.0f, -1000000.0f};
 
             Mesh mesh = model->meshes[0];
+            // here we calculate the min and max of every point to build our box.
             if(mesh.vertices != nullptr){
                 int vertexCount = mesh.vertexCount;
                 Vector3 *vertData = (Vector3 *)mesh.vertices;
@@ -193,12 +194,22 @@ class PhysicsWorld {
             Vector3 worldDirection = Vector3RotateByQuaternion(direction, object->rotation);
             object->force = Vector3Add(object->force, Vector3Scale(worldDirection, force));
         }
-        void Rotate(Object* object, Vector3 direction){ //ToDo: Here ios big bugg. we did not check movement direction.
-                                                        //so if rewerse the car stopps. But wee need rewrite to rotate with force instead annyways.
-            //Hacks to make it turn we can't simply rotate the velocity vector. TODO:
-            //Make the function so that it is universal and work on the force so we can slide.
+        void Rotate(Object* object, Vector3 direction){
+            //TODO: Wee need rewrite to rotate with force instead annyways.
+            //TODO: Make the function so that it is universal and work on the force so we can slide.
+            
+            //Hacks to make it turn we can't simply rotate the velocity vector.
             float tempVelocity = Vector3Length(object->velocity);
-            Vector3 localForward = Vector3RotateByQuaternion({0,0,1}, object->rotation); // use the local Z directon and object rotation quaternion. i 
+            Vector3 localForward = Vector3RotateByQuaternion({0,0,1}, object->rotation); // use the local Z directon and object rotation quaternion.
+            
+            //acording to reading some stuff. we need to normalize the velocity vector aginst our normalized local vector
+            //perhaps we can do this in a universal way. and look for all directions and rotate this way? 
+            //then calculate the dot product. of the normalized vectors. and after this we need to check if the dot product is negative.
+            Vector3 normVelocity = Vector3Normalize(object->velocity);
+            float dotOfVandL = Vector3DotProduct(normVelocity, localForward); 
+            if(dotOfVandL < 0){
+                localForward = Vector3RotateByQuaternion({0,0,-1}, object->rotation);
+            }
             object->velocity = Vector3Scale(localForward, tempVelocity);
         }
         //void Gravity(Object* object, float dt)
@@ -210,8 +221,7 @@ class PhysicsWorld {
         /* ----------  One frame of physics  ---------- */
         void Step(float dt){
             for (Object* obj : dynObjects){
-                //Apply Gravity.
-                //Gravity(obj, dt);
+                //Apply Gravity. First. Need to think about the order of forces applied.
                 Gravity(obj);
                 //Acumulator Velocity. Here we build the velocity vector.
                 //a = F / m
@@ -225,9 +235,9 @@ class PhysicsWorld {
                                             Vector3Scale(obj->velocity, dt));
                 //Acumulator Rotation. Here we build the rotatinal force TODO: write some code here.
                 
-                                //Run our collision handler.
+                //Run our collision handler.
                 ObbCollisions();
-                
+
                 //Clear forces before next frame.
                 obj->force = {0.0f, 0.0f, 0.0f};
             }
